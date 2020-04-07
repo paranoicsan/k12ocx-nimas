@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE package PUBLIC "+//ISBN 0-9673008-1-9//DTD OEB 1.2 Package//EN" "http://openebook.org/dtds/oeb-1.2/oebpkg12.dtd">
+<package unique-identifier="G6WCSPOPF-NIMAS">
+  <metadata>
+    <dc-metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+      <dc:Title>Lesson 2: What was the air outside like on a day when it hailed?</dc:Title>
+      <dc:Creator>LearningTapestry</dc:Creator>
+      <dc:Publisher>N/A</dc:Publisher>
+      <dc:Date>2020-04-06</dc:Date>
+      <dc:Format>NIMAS 1.1</dc:Format>
+      <dc:Identifier id="G6WCSPOPF-NIMAS">UPC1122334455NIMAS</dc:Identifier>
+      <dc:Language>en</dc:Language>
+      <dc:Rights>N/A</dc:Rights>
+      <dc:Source>N/A</dc:Source>
+      <dc:Subject>Science</dc:Subject>
+    </dc-metadata>
+  </metadata>
+  <manifest>
+    <item href="g6.wc.sp.xml" id="nimasxml" media-type="application/x-dtbook+xml"/>
+    <item href="g6.wc.sp.pdf" id="g6wcsppdf" media-type="application/pdf"/>
+    <item href="images/turn_talk_icon.png" id="turn_talk_icon" media-type="image/png"/>
+    <item href="images/notebook_icon.png" id="notebook_icon" media-type="image/png"/>
+    <item href="images/G6_UWC_Reference_wc.jpg" id="G6_UWC_Reference_wc" media-type="image/jpeg"/>
+    <item href="images/class_icon.png" id="class_icon" media-type="image/png"/>
+  </manifest>
+  <spine>
+    <itemref idref="nimasxml"/>
+  </spine>
+</package>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE dtbook PUBLIC "-//NISO//DTD dtbook 2005-3//EN" "http://www.daisy.org/z3986/2005/dtbook-2005-3.dtd">
+<dtbook version="2005-3">
+  <head/>
+  <book>
+    <frontmatter>
+      <doctitle>Lesson 2: What was the air outside like on a day when it hailed?</doctitle>
+    </frontmatter>
+    <bodymatter>
+      <level1 class="part">
+        <h1>Navigation</h1>
+        <pagenum id="g6wcsppage_1" page="special">g6wcspxml1</pagenum>
+        <table>
+          <tr>
+            <td>
+              <p>Turn and talk</p>
+              <img alt="turnandtalk" src="./images/turn_talk_icon.png"/>
+            </td>
+            <td>
+              <list type="ol" start="1">
+                <li>
+                  <span>Imagine you were at a spot where you knew a hailstorm was
+                    going to occur. Discuss these questions:
+                  </span>
+                </li>
+              </list>
+              <list type="ul">
+                <li>
+                  <span>What do you think the conditions outside are like on a day
+                    when it hails?
+                  </span>
+                </li>
+                <li>
+                  <span>What data would you want to collect before, during, and after
+                    the hail event to try to figure out what caused it?
+                  </span>
+                </li>
+              </list>
+            </td>
+          </tr>
+        </table>
+      </level1>
+      <level1 class="part">
+        <h1>Hailstone Observations</h1>
+        <table>
+          <tr>
+            <td>
+              <p>In your notebook</p>
+              <img alt="notebook" src="./images/notebook_icon.png"/>
+            </td>
+            <td>
+              <img alt="wc.l2.ref2" src="./images/G6_UWC_Reference_wc.jpg"/>
+              <list type="ol" start="2">
+                <li>
+                  <span>Make a 2-column chart in your science notebook and record what you notice and wonder about the
+                    hailstone images.
+                  </span>
+                </li>
+              </list>
+            </td>
+          </tr>
+        </table>
+      </level1>
+      <level1 class="part">
+        <h1>Make Sense</h1>
+        <table>
+          <tr>
+            <td>
+              <p>With your class</p>
+              <img alt="class" src="./images/class_icon.png"/>
+            </td>
+            <td>
+              <list type="ol" start="3">
+                <li>
+                  <span>Share with the class:</span>
+                </li>
+              </list>
+              <list type="ul">
+                <li>
+                  <span>What are some patterns you noticed as you examined the hailstone images?</span>
+                </li>
+                <li>
+                  <span>What new ideas and questions do you have about how hailstones are produced?</span>
+                </li>
+              </list>
+            </td>
+          </tr>
+        </table>
+      </level1>
+    </bodymatter>
+  </book>
+</dtbook>
