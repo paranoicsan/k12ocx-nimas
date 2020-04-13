@@ -12,9 +12,9 @@
           </doctitle>
         </frontmatter>
         <bodymatter>
-          <xsl:for-each select="sections">
+          <xsl:for-each select="sections/section">
             <level1 class="part">
-              <xsl:copy-of select="section/node()"/>
+              <xsl:copy-of select="node()"/>
             </level1>
           </xsl:for-each>
         </bodymatter>
