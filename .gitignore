@@ -1,4 +1,5 @@
 .idea/
 tmp/
+nimas-fileset/reports/
 *.zip
 converter/images
