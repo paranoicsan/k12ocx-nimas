@@ -8,12 +8,10 @@ Build the image:
 $ docker build -t paranoicsan/ocx2nimas .
 ```
 
-Start the container:
-
-TODO: Place here direct call to launch ruby script to perform action immediately
+Execute the script:
 
 ```bash
-$ docker run --rm --name ocx2nimas -v $(pwd):/app -it paranoicsan/ocx2nimas
+$ docker run --rm -v $(pwd):/app -it paranoicsan/ocx2nimas ruby ./script.rb
 ```
 
 ### NIMAS fileset Validation

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'date'
 require 'json/ld'
 require 'nokogiri'
 require 'open-uri'
@@ -38,7 +39,15 @@ module OcxNimas
     attr_reader :json_ld, :source
 
     def build_opf
-      @opf = 'TBD'
+      opf_xml = Nokogiri::XML File.read(TEMPLATE_OPF)
+      opf_xml.root['unique-identifier'] = unique_identifier
+
+      metadata_node = opf_xml.at_xpath('//dc-metadata')
+      raise 'No dc-metadata!' if metadata_node.nil?
+
+      metadata_node.replace handle_metadata(metadata_node)
+
+      @opf = opf_xml.to_xml
     end
 
     def build_xml
@@ -83,6 +92,29 @@ module OcxNimas
       end
     end
 
+    def handle_metadata(xml)
+      metadata = Nokogiri::XML xml.to_xml
+      metadata.at_xpath('//dc:Title').content = json_ld['name']
+      # TODO: Use correct value Creator
+      metadata.at_xpath('//dc:Creator').content = 'N/A'
+      # TODO: Use correct value Publisher
+      metadata.at_xpath('//dc:Publisher').content = 'N/A'
+      metadata.at_xpath('//dc:Date').content = Date.today.strftime('%Y-%m-%d')
+
+      identifier_node = metadata.at_xpath('//dc:Identifier')
+      identifier_node['id'] = unique_identifier
+      identifier_node.content = json_ld['identifier']
+
+      metadata.at_xpath('//dc:Language').content = 'en'
+      # TODO: Use correct value Rights
+      metadata.at_xpath('//dc:Rights').content = 'N/A'
+      # TODO: Use correct value Source
+      metadata.at_xpath('//dc:Source').content = 'N/A'
+      # TODO: Use correct value Subject
+      metadata.at_xpath('//dc:Subject').content = json_ld['name']
+      metadata.root
+    end
+
     # Make sure that inside section should correct hierarchy
     # h1 -> h2 -> h3 -> [...]
     def handle_sections
@@ -109,6 +141,10 @@ module OcxNimas
         io.close
         FileUtils.mv io.path, path
       end
+    end
+
+    def unique_identifier
+      @unique_identifier ||= "#{json_ld['identifier']}-NIMAS"
     end
   end
 end
