@@ -18,43 +18,57 @@ module OcxNimas
     TEMPLATE_XML = File.join TEMPLATE_PATH, 'ocx2nimas.xslt'
     private_constant :TEMPLATE_XML
 
-    attr_reader :opf, :xml
-
     def initialize(input_html)
       @json_ld = JSON::LD::API.load_html input_html, url: ''
       html = OcxNimas::Sanitizer.sanitize input_html
       @source = Nokogiri::HTML html
     end
 
+    #
+    # @param image_path File path where to download images
+    # @param opts A set of options
+    #
+    # Possible options are:
+    # - force_download: Force download the image if file with the same name already exists
+    # - xml_filepath: File path for the NIMAS conformant XML file, default to 'timestamp.xml'
+    # - opf_filepath: File path for the OPF file, default to 'timestamp.opf'
+    #
     def generate(image_path, opts = {})
-      handle_images(image_path, opts)
+      @opts = opts
+
+      handle_images image_path
       handle_sections
       handle_lists
       build_xml
       build_opf
+
+      # TODO: Return the zipped file
+      ''
     end
 
     private
 
-    attr_reader :json_ld, :source
+    attr_reader :json_ld, :opts, :source
 
     def build_opf
-      opf_xml = Nokogiri::XML File.read(TEMPLATE_OPF)
-      opf_xml.root['unique-identifier'] = unique_identifier
+      opf = Nokogiri::XML File.read(TEMPLATE_OPF)
+      opf.root['unique-identifier'] = unique_identifier
 
-      metadata_node = opf_xml.at_xpath('//dc-metadata')
+      metadata_node = opf.at_xpath('//dc-metadata')
       raise 'No dc-metadata!' if metadata_node.nil?
 
       metadata_node.replace handle_metadata(metadata_node)
 
-      @opf = opf_xml.to_xml
+      File.open(filepath_opf, 'wb') { |f| f.write opf.to_xml }
     end
 
     def build_xml
       template = Nokogiri::XSLT File.read(TEMPLATE_XML)
-      @xml = template
-               .transform(build_xml_auxiliary)
-               .to_xml(save_with: Nokogiri::XML::Node::SaveOptions::FORMAT | Nokogiri::XML::Node::SaveOptions::AS_XML)
+      xml = template
+              .transform(build_xml_auxiliary)
+              .to_xml(save_with: Nokogiri::XML::Node::SaveOptions::FORMAT | Nokogiri::XML::Node::SaveOptions::AS_XML)
+
+      File.open(filepath_xml, 'wb') { |f| f.write xml }
     end
 
     def build_xml_auxiliary
@@ -76,9 +90,17 @@ module OcxNimas
       xml_doc
     end
 
+    def filepath_opf
+      @filepath_opf ||= opts[:opf_filepath].to_s.empty? ? "#{Time.now.to_i}.opf" : opts[:opf_filepath]
+    end
+
+    def filepath_xml
+      @filepath_xml ||= opts[:xml_filepath].to_s.empty? ? "#{Time.now.to_i}.xml" : opts[:xml_filepath]
+    end
+
     # Iterate over each image, fetch it and save for the path specified,
     # update original HTML to point to a new location
-    def handle_images(path, opts)
+    def handle_images(path)
       re = /-/
       source.xpath('//img').each do |img_node|
         url = img_node['src']
@@ -111,7 +133,7 @@ module OcxNimas
       # TODO: Use correct value Source
       metadata.at_xpath('//dc:Source').content = 'N/A'
       # TODO: Use correct value Subject
-      metadata.at_xpath('//dc:Subject').content = json_ld['name']
+      metadata.at_xpath('//dc:Subject').content = 'Science'
       metadata.root
     end
 
