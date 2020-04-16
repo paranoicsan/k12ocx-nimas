@@ -4,6 +4,7 @@ require 'date'
 require 'json/ld'
 require 'nokogiri'
 require 'open-uri'
+require 'zip'
 
 require_relative 'sanitizer'
 
@@ -46,6 +47,7 @@ module OcxNimas
     # - force_download: +Boolean+ Force download the image if file with the same name already exists
     # - xml_filename: +String+ File name for the NIMAS conformant XML file, default to 'timestamp.xml'
     # - opf_filename: +String+ File name for the OPF file, default to 'timestamp.opf'
+    # - zip: +Boolean+ Create the zip file if true
     #
     def generate(path, opts = {})
       raise ArgumentError, 'Specify the path where bundle should be generated' if path.to_s.empty?
@@ -58,9 +60,9 @@ module OcxNimas
       handle_lists
       build_xml
       build_opf
+      build_zip if opts[:zip]
 
-      # TODO: Return the zipped file
-      ''
+      true
     end
 
     private
@@ -74,14 +76,16 @@ module OcxNimas
       build_opf_metadata opf
       build_opf_manifest opf
 
-      File.open(filepath_opf, 'wb') { |f| f.write opf.to_xml }
+      filepath = File.join path, filename_opf
+      File.open(filepath, 'wb') { |f| f.write opf.to_xml }
     end
 
     def build_xml
       template = Nokogiri::XSLT File.read(TEMPLATE_XML)
       xml = template.transform(build_xml_auxiliary)
 
-      File.open(filepath_xml, 'wb') { |f| f.write xml.to_xml }
+      filepath = File.join path, filename_xml
+      File.open(filepath, 'wb') { |f| f.write xml.to_xml }
     end
 
     def build_xml_auxiliary
@@ -103,12 +107,35 @@ module OcxNimas
       xml_doc
     end
 
-    def filepath_opf
-      @filepath_opf ||= opts[:opf_filepath].to_s.empty? ? "#{Time.now.to_i}.opf" : opts[:opf_filepath]
+    def build_zip
+      zip_filename = "#{File.basename(filename_xml, File.extname(filename_xml))}.zip"
+      Zip::OutputStream.open(zip_filename) do |zos|
+        zos.put_next_entry filename_xml
+        zos.puts File.read(File.join path, filename_xml)
+
+        zos.put_next_entry filename_opf
+        zos.puts File.read(File.join path, filename_opf)
+
+        unless opts[:cover_pdf].to_s.empty?
+          pdf_name = File.basename opts[:cover_pdf]
+          pdf_path = File.join path, pdf_name
+          zos.put_next_entry File.basename pdf_name
+          zos.puts File.read(pdf_path)
+        end
+
+        images.each do |image_path|
+          zos.put_next_entry image_path
+          zos.puts File.read(image_path)
+        end
+      end
     end
 
-    def filepath_xml
-      @filepath_xml ||= opts[:xml_filepath].to_s.empty? ? "#{Time.now.to_i}.xml" : opts[:xml_filepath]
+    def filename_opf
+      @filename_opf ||= opts[:opf_filepath].to_s.empty? ? "#{Time.now.to_i}.opf" : opts[:opf_filepath]
+    end
+
+    def filename_xml
+      @filename_xml ||= opts[:xml_filepath].to_s.empty? ? "#{Time.now.to_i}.xml" : opts[:xml_filepath]
     end
 
     # Iterate over each image, fetch it and save,
@@ -136,7 +163,7 @@ module OcxNimas
 
       # main entry
       node = manifest.at_xpath('item[@id="nimasxml"]')
-      node['href'] = filepath_xml
+      node['href'] = filename_xml
 
       # pdf record
       unless opts[:cover_pdf].to_s.empty?
@@ -217,7 +244,7 @@ module OcxNimas
     def save_image(url, path)
       case io = URI.open(url)
       when StringIO
-        File.open(path, 'w') { |f| f.write(io) }
+        File.open(path, 'wb') { |f| f.write io.read }
       when Tempfile
         io.close
         FileUtils.mv io.path, path

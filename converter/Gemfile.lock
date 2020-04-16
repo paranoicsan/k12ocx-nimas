@@ -41,6 +41,7 @@ GEM
       ruby-progressbar (~> 1.7)
       unicode-display_width (>= 1.4.0, < 2.0)
     ruby-progressbar (1.10.1)
+    rubyzip (2.3.0)
     sanitize (5.1.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.8.0)
@@ -54,6 +55,7 @@ DEPENDENCIES
   json-ld
   nokogiri
   rubocop (~> 0.81.0)
+  rubyzip
   sanitize
 
 RUBY VERSION
