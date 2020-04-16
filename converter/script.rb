@@ -9,10 +9,11 @@ OUTPUT_OPF = File.join File.expand_path(__dir__), 'g6.wc.sp.ocx.opf'
 OUTPUT_XML = File.join File.expand_path(__dir__), 'g6.wc.sp.ocx.xml'
 
 opts = {
-  force_download: true,
+  # cover_pdf: 'tmp/cover.pdf', # can be passed in to bundle the cover
+  force_download: false,
   opf_filename: OUTPUT_OPF,
   xml_filename: OUTPUT_XML
 }
 
 converter = OcxNimas::Converter.new File.read(INPUT_OCX)
-converter.generate File.expand_path('images', __dir__), opts
+converter.generate File.expand_path(__dir__), opts

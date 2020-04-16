@@ -9,6 +9,9 @@ require_relative 'sanitizer'
 
 module OcxNimas
   class Converter
+    IMAGES_PATH = 'images'
+    private_constant :IMAGES_PATH
+
     TEMPLATE_PATH = File.join File.expand_path('.', __dir__), 'templates'
     private_constant :TEMPLATE_PATH
 
@@ -19,24 +22,38 @@ module OcxNimas
     private_constant :TEMPLATE_XML
 
     def initialize(input_html)
+      @images = []
       @json_ld = JSON::LD::API.load_html input_html, url: ''
       html = OcxNimas::Sanitizer.sanitize input_html
       @source = Nokogiri::HTML html
     end
 
     #
-    # @param image_path File path where to download images
+    # Generate the NIMAS file set. As a result there will be the following picture:
+    #
+    # -images/
+    # -|-image-1.jpg
+    # -|-image-2.jpg
+    # -result.xml
+    # -result.opf
+    # -cover.pdf
+    #
+    # @param path File path where the final bundle should be generated
     # @param opts A set of options
     #
     # Possible options are:
-    # - force_download: Force download the image if file with the same name already exists
-    # - xml_filepath: File path for the NIMAS conformant XML file, default to 'timestamp.xml'
-    # - opf_filepath: File path for the OPF file, default to 'timestamp.opf'
+    # - cover_pdf: +String+ File path to a cover to be added to a bundle
+    # - force_download: +Boolean+ Force download the image if file with the same name already exists
+    # - xml_filename: +String+ File name for the NIMAS conformant XML file, default to 'timestamp.xml'
+    # - opf_filename: +String+ File name for the OPF file, default to 'timestamp.opf'
     #
-    def generate(image_path, opts = {})
-      @opts = opts
+    def generate(path, opts = {})
+      raise ArgumentError, 'Specify the path where bundle should be generated' if path.to_s.empty?
 
-      handle_images image_path
+      @opts = opts
+      @path = path
+
+      handle_images
       handle_sections
       handle_lists
       build_xml
@@ -48,27 +65,23 @@ module OcxNimas
 
     private
 
-    attr_reader :json_ld, :opts, :source
+    attr_reader :images, :json_ld, :opts, :path, :source
 
     def build_opf
       opf = Nokogiri::XML File.read(TEMPLATE_OPF)
       opf.root['unique-identifier'] = unique_identifier
 
-      metadata_node = opf.at_xpath('//dc-metadata')
-      raise 'No dc-metadata!' if metadata_node.nil?
-
-      metadata_node.replace handle_metadata(metadata_node)
+      build_opf_metadata opf
+      build_opf_manifest opf
 
       File.open(filepath_opf, 'wb') { |f| f.write opf.to_xml }
     end
 
     def build_xml
       template = Nokogiri::XSLT File.read(TEMPLATE_XML)
-      xml = template
-              .transform(build_xml_auxiliary)
-              .to_xml(save_with: Nokogiri::XML::Node::SaveOptions::FORMAT | Nokogiri::XML::Node::SaveOptions::AS_XML)
+      xml = template.transform(build_xml_auxiliary)
 
-      File.open(filepath_xml, 'wb') { |f| f.write xml }
+      File.open(filepath_xml, 'wb') { |f| f.write xml.to_xml }
     end
 
     def build_xml_auxiliary
@@ -98,24 +111,58 @@ module OcxNimas
       @filepath_xml ||= opts[:xml_filepath].to_s.empty? ? "#{Time.now.to_i}.xml" : opts[:xml_filepath]
     end
 
-    # Iterate over each image, fetch it and save for the path specified,
+    # Iterate over each image, fetch it and save,
     # update original HTML to point to a new location
-    def handle_images(path)
+    def handle_images
       re = /-/
       source.xpath('//img').each do |img_node|
         url = img_node['src']
         file_name = URI.parse(url).path.tr('/', '-').sub(re, '')
-        file_path = File.join path, file_name
-        img_node['src'] = file_path
+        file_path_relative = File.join IMAGES_PATH, file_name
+        file_path_absolute = File.join path, file_path_relative
+        img_node['src'] = file_path_relative
 
-        next if File.exist?(file_path) && !opts[:force_download]
+        images << file_path_relative
 
-        save_image url, file_path
+        next if File.exist?(file_path_absolute) && !opts[:force_download]
+
+        save_image url, file_path_absolute
+      end
+      images.uniq!
+    end
+
+    def build_opf_manifest(opf)
+      manifest = opf.at_xpath('/package/manifest')
+
+      # main entry
+      node = manifest.at_xpath('item[@id="nimasxml"]')
+      node['href'] = filepath_xml
+
+      # pdf record
+      unless opts[:cover_pdf].to_s.empty?
+        pdf_name = File.basename opts[:cover_pdf]
+        pdf_path = File.join path, pdf_name
+        FileUtils.copy opts[:cover_pdf], pdf_path
+        node = manifest.at_xpath('item[@id="nimaspdf"]')
+        node['href'] = pdf_name
+      end
+
+      re = /[^\w\d]/
+      images.each do |image_path|
+        filename = File.basename(image_path)
+        node = opf.create_element 'item'
+        node['id'] = filename.gsub(re, '')
+        node['href'] = image_path
+        node['media-type'] = image_type File.extname(filename).tr('.', '')
+        manifest.add_child node
       end
     end
 
-    def handle_metadata(xml)
-      metadata = Nokogiri::XML xml.to_xml
+    def build_opf_metadata(opf)
+      node = opf.at_xpath('//dc-metadata')
+      raise 'No dc-metadata!' if node.nil?
+
+      metadata = Nokogiri::XML node.to_xml
       metadata.at_xpath('//dc:Title').content = json_ld['name']
       # TODO: Use correct value Creator
       metadata.at_xpath('//dc:Creator').content = 'N/A'
@@ -134,7 +181,16 @@ module OcxNimas
       metadata.at_xpath('//dc:Source').content = 'N/A'
       # TODO: Use correct value Subject
       metadata.at_xpath('//dc:Subject').content = 'Science'
-      metadata.root
+
+      node.replace metadata.root
+    end
+
+    # Replace all <ul>/<ol> elements with NIMAS <list> elements
+    def handle_lists
+      source.xpath('//ul | //ol').each do |node|
+        node['type'] = node.name
+        node.name = 'list'
+      end
     end
 
     # Make sure that inside section should correct hierarchy
@@ -147,11 +203,14 @@ module OcxNimas
       end
     end
 
-    # Replace all <ul>/<ol> elements with NIMAS <list> elements
-    def handle_lists
-      source.xpath('//ul | //ol').each do |node|
-        node['type'] = node.name
-        node.name = 'list'
+    def image_type(extname)
+      case extname
+      when 'png' then 'image/png'
+      when 'jpg' then 'image/jpeg'
+      when 'jpeg' then 'image/jpeg'
+      when 'svg' then 'image/svg+xml'
+      else
+        raise "Image #{extname.upcase} is not supported."
       end
     end
 

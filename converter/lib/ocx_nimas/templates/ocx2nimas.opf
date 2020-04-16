@@ -17,6 +17,7 @@
   </metadata>
   <manifest>
     <item href="nimas.xml" id="nimasxml" media-type="application/x-dtbook+xml"/>
+    <item href="nimas.pdf" id="nimaspdf" media-type="application/pdf"/>
   </manifest>
   <spine>
     <itemref idref="nimasxml"/>
