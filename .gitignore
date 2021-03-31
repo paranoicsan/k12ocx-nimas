@@ -4,3 +4,4 @@ converter/tmp
 nimas-fileset/reports/
 *.zip
 converter/images
+.DS_Store
