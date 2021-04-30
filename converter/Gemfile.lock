@@ -33,7 +33,7 @@ GEM
     rdf (3.1.1)
       hamster (~> 3.0)
       link_header (~> 0.0, >= 0.0.8)
-    rexml (3.2.4)
+    rexml (3.2.5)
     rubocop (0.81.0)
       jaro_winkler (~> 1.5.1)
       parallel (~> 1.10)
